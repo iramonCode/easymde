@@ -4,7 +4,44 @@ All notable changes to easymde will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!--## [Unreleased]-->
+[comment]: <> (## [Unreleased])
+## [2.15.0] - 2021-04-22
+### Added
+- `imagePathAbsolute` option to return the absolute path when uploading an image (Thanks to [@wwsalmon], [#313]).
+
+### Fixed
+- `ToolbarIcon` typings, added `icon` (Thanks to [@ChronosMasterOfAllTime], [#308]).
+- Image link extension when it was not the last part of the URL (Thanks to [@deerboy], [#311]).
+- Preview mode did not stay enabled when toggling to fullscreen (Thanks to [@smundro], [#316]).
+- Required typings not being included in `dependencies` (Thanks to [@marekdedic], [#322]).
+
+## [2.14.0] - 2021-02-14
+### Added
+- The `scrollbarStyle` option to change the style of the scrollbar (Thanks to [@danice], [#250]).
+
+### Fixed
+- Issues with images not displaying correctly in the preview screen (Thanks to [@ivictbor], [#253]).
+- An error when both `sideBySideFullscreen` and `status` were set to `false` (Thanks to [@joahim], [#272]).
+- Editor trying to display non-image files (Thanks to [@Juupaa], [#277])
+- Unneeded call to `window.removeEventListener` (Thanks to [@emirotin], [#280])
+- Spell checker (Thanks to [@Fanvadar], [#284]).
+- Focus issues with toolbar dropdown menus (Thanks to [@Situphen], [#285]).
+- Interaction between the `sideBySideFullscreen` and the preview state (Thanks to [@smundro], [#286])
+- Refactored strange method of padding the toolbar into regular padding (Thanks to [@sn3p], [#293]).
+- Security issue in `marked` dependency (Thanks to [@dependabot], [#298]).
+
+## [2.13.0] - 2020-11-11
+### Added
+- CodeMirror autorefresh plugin and autoRefresh option (Thanks to [@mbolli], [#249]).
+- `lineNumbers` option to display line numbers in the editor (Thanks to [@nhymxu], [#267]).
+
+### Fixed
+- CSS scoping issues when the editor is used in combination with other CodeMirror instances ([#252]).
+
+## [2.12.1] - 2020-10-06
+### Changed
+- Set `previewImagesInEditor` option to `false` by default ([#251]).
+
 ## [2.12.0] - 2020-09-29
 ### Added
 - `this` context in imageUploadFunction (Thanks to [@JoshuaLicense], [#225]).
@@ -167,6 +204,8 @@ Project forked from [SimpleMDE](https://github.com/sparksuite/simplemde-markdown
 - Cursor not always showing in "text" mode over the edit field
 
 <!-- Linked issues -->
+[#252]: https://github.com/Ionaru/easy-markdown-editor/issues/252
+[#251]: https://github.com/Ionaru/easy-markdown-editor/issues/251
 [#239]: https://github.com/Ionaru/easy-markdown-editor/issues/239
 [#178]: https://github.com/Ionaru/easy-markdown-editor/issues/178
 [#136]: https://github.com/Ionaru/easy-markdown-editor/issues/136
@@ -183,6 +222,23 @@ Project forked from [SimpleMDE](https://github.com/sparksuite/simplemde-markdown
 [#9]: https://github.com/Ionaru/easy-markdown-editor/issues/9
 
 <!-- Linked PRs -->
+[#322]: https://github.com/Ionaru/easy-markdown-editor/pull/322
+[#316]: https://github.com/Ionaru/easy-markdown-editor/pull/316
+[#313]: https://github.com/Ionaru/easy-markdown-editor/pull/313
+[#311]: https://github.com/Ionaru/easy-markdown-editor/pull/311
+[#308]: https://github.com/Ionaru/easy-markdown-editor/pull/308
+[#298]: https://github.com/Ionaru/easy-markdown-editor/pull/298
+[#293]: https://github.com/Ionaru/easy-markdown-editor/pull/293
+[#286]: https://github.com/Ionaru/easy-markdown-editor/pull/286
+[#285]: https://github.com/Ionaru/easy-markdown-editor/pull/285
+[#284]: https://github.com/Ionaru/easy-markdown-editor/pull/284
+[#280]: https://github.com/Ionaru/easy-markdown-editor/pull/280
+[#277]: https://github.com/Ionaru/easy-markdown-editor/pull/277
+[#272]: https://github.com/Ionaru/easy-markdown-editor/pull/272
+[#267]: https://github.com/Ionaru/easy-markdown-editor/pull/267
+[#253]: https://github.com/Ionaru/easy-markdown-editor/pull/253
+[#250]: https://github.com/Ionaru/easy-markdown-editor/pull/250
+[#249]: https://github.com/Ionaru/easy-markdown-editor/pull/249
 [#244]: https://github.com/Ionaru/easy-markdown-editor/pull/244
 [#235]: https://github.com/Ionaru/easy-markdown-editor/pull/235
 [#225]: https://github.com/Ionaru/easy-markdown-editor/pull/225
@@ -216,6 +272,19 @@ Project forked from [SimpleMDE](https://github.com/sparksuite/simplemde-markdown
 [#19]: https://github.com/Ionaru/easy-markdown-editor/pull/19
 
 <!-- Linked users -->
+[@dependabot]: https://github.com/dependabot
+[@wwsalmon]: https://github.com/wwsalmon
+[@ChronosMasterOfAllTime]: https://github.com/ChronosMasterOfAllTime
+[@deerboy]: https://github.com/deerboy
+[@marekdedic]: https://github.com/marekdedic
+[@emirotin]: https://github.com/emirotin
+[@smundro]: https://github.com/smundro
+[@Juupaa]: https://github.com/Juupaa
+[@Fanvadar]: https://github.com/Fanvadar
+[@danice]: https://github.com/danice
+[@joahim]: https://github.com/joahim
+[@nhymxu]: https://github.com/nhymxu
+[@mbolli]: https://github.com/mbolli
 [@ivictbor]: https://github.com/ivictbor
 [@JoshuaLicense]: https://github.com/JoshuaLicense
 [@czynskee]: https://github.com/czynskee
@@ -245,7 +314,11 @@ Project forked from [SimpleMDE](https://github.com/sparksuite/simplemde-markdown
 [@sne11ius]: https://github.com/sne11ius
 
 <!-- Linked versions -->
-[Unreleased]: https://github.com/Ionaru/easy-markdown-editor/compare/2.12.0...HEAD
+[Unreleased]: https://github.com/Ionaru/easy-markdown-editor/compare/2.15.0...HEAD
+[2.15.0]: https://github.com/Ionaru/easy-markdown-editor/compare/2.14.0...2.15.0
+[2.14.0]: https://github.com/Ionaru/easy-markdown-editor/compare/2.13.0...2.14.0
+[2.13.0]: https://github.com/Ionaru/easy-markdown-editor/compare/2.12.1...2.13.0
+[2.12.1]: https://github.com/Ionaru/easy-markdown-editor/compare/2.12.0...2.12.1
 [2.12.0]: https://github.com/Ionaru/easy-markdown-editor/compare/2.11.0...2.12.0
 [2.11.0]: https://github.com/Ionaru/easy-markdown-editor/compare/2.10.1...2.11.0
 [2.10.1]: https://github.com/Ionaru/easy-markdown-editor/compare/2.10.0...2.10.1

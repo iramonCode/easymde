@@ -6,6 +6,7 @@ require('codemirror/addon/display/fullscreen.js');
 require('codemirror/mode/markdown/markdown.js');
 require('codemirror/addon/mode/overlay.js');
 require('codemirror/addon/display/placeholder.js');
+require('codemirror/addon/display/autorefresh.js');
 require('codemirror/addon/selection/mark-selection.js');
 require('codemirror/addon/search/searchcursor.js');
 require('codemirror/mode/gfm/gfm.js');
@@ -136,6 +137,50 @@ function fixShortcut(name) {
     }
     return name;
 }
+
+/**
+ * Class handling utility methods.
+ */
+var CLASS_REGEX = {};
+
+/**
+ * Convert a className string into a regex for matching (and cache).
+ * Note that the RegExp includes trailing spaces for replacement
+ * (to ensure that removing a class from the middle of the string will retain
+ *  spacing between other classes.)
+ * @param {String} className Class name to convert to regex for matching.
+ * @returns {RegExp} Regular expression option that will match className.
+ */
+function getClassRegex (className) {
+    return CLASS_REGEX[className] || (CLASS_REGEX[className] = new RegExp('\\s*' + className + '(\\s*)', 'g'));
+}
+
+/**
+ * Add a class string to an element.
+ * @param {Element} el DOM element on which to add className.
+ * @param {String} className Class string to apply
+ * @returns {void}
+ */
+function addClass (el, className) {
+    if (!el || !className) return;
+    var classRegex = getClassRegex(className);
+    if (el.className.match(classRegex)) return; // already applied
+    el.className += ' ' + className;
+}
+
+/**
+ * Remove a class string from an element.
+ * @param {Element} el DOM element from which to remove className.
+ * @param {String} className Class string to remove
+ * @returns {void}
+ */
+ function removeClass (el, className) {
+    if (!el || !className) return;
+    var classRegex = getClassRegex(className);
+    if (!el.className.match(classRegex)) return; // not available to remove
+    el.className = el.className.replace(classRegex, '$1');
+}
+
 
 /**
  * Create dropdown block
@@ -331,11 +376,22 @@ function toggleFullScreen(editor) {
         document.body.style.overflow = saved_overflow;
     }
 
+    var wrapper = cm.getWrapperElement();
+    var sidebyside = wrapper.nextSibling;
 
-    // Hide side by side if needed
-    var sidebyside = cm.getWrapperElement().nextSibling;
-    if (/editor-preview-active-side/.test(sidebyside.className))
-        toggleSideBySide(editor);
+    if (/editor-preview-active-side/.test(sidebyside.className)) {
+        if (editor.options.sideBySideFullscreen === false) {
+            // if side-by-side not-fullscreen ok, apply classes as needed
+            var easyMDEContainer = wrapper.parentNode;
+            if (cm.getOption('fullScreen')) {
+                removeClass(easyMDEContainer, 'sided--no-fullscreen');
+            } else {
+                addClass(easyMDEContainer, 'sided--no-fullscreen');
+            }
+        } else {
+            toggleSideBySide(editor);
+        }
+    }
 
     if (editor.options.onToggleFullScreen) {
         editor.options.onToggleFullScreen(cm.getOption('fullScreen') || false);
@@ -810,7 +866,17 @@ function afterImageUploaded(editor, url) {
     var stat = getState(cm);
     var options = editor.options;
     var imageName = url.substr(url.lastIndexOf('/') + 1);
-    _replaceSelection(cm, stat.image, options.insertTexts.uploadedImage, url);
+    var ext = imageName.substring(imageName.lastIndexOf('.') + 1).replace(/\?.*$/, '');
+
+    // Check if media is an image
+    if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) {
+      _replaceSelection(cm, stat.image, options.insertTexts.uploadedImage, url);
+    } else {
+      var text_link = options.insertTexts.link;
+      text_link[0] = '[' + imageName;
+      _replaceSelection(cm, stat.link, text_link, url);
+    }
+
     // show uploaded image filename for 1000ms
     editor.updateStatusBar('upload-image', editor.options.imageTexts.sbOnUploaded.replace('#image_name#', imageName));
     setTimeout(function () {
@@ -869,30 +935,12 @@ function toggleSideBySide(editor) {
     var toolbarButton = editor.toolbarElements && editor.toolbarElements['side-by-side'];
     var useSideBySideListener = false;
 
-    var noFullscreenItems = [
-        wrapper.parentNode, // easyMDEContainer
-        editor.gui.toolbar,
-        wrapper,
-        preview,
-        editor.gui.statusbar,
-    ];
-
-    function addNoFullscreenClass(el) {
-        el.className += ' sided--no-fullscreen';
-    }
-
-    function removeNoFullscreenClass(el) {
-        el.className = el.className.replace(
-            /\s*sided--no-fullscreen\s*/g, ''
-        );
-    }
+    var easyMDEContainer = wrapper.parentNode;
 
     if (/editor-preview-active-side/.test(preview.className)) {
-        if (cm.getOption('sideBySideNoFullscreen')) {
-            cm.setOption('sideBySideNoFullscreen', false);
-            noFullscreenItems.forEach(function (el) {
-                removeNoFullscreenClass(el);
-            });
+        if (editor.options.sideBySideFullscreen === false) {
+            // if side-by-side not-fullscreen ok, remove classes when hiding side
+            removeClass(easyMDEContainer, 'sided--no-fullscreen');
         }
         preview.className = preview.className.replace(
             /\s*editor-preview-active-side\s*/g, ''
@@ -906,10 +954,8 @@ function toggleSideBySide(editor) {
         setTimeout(function () {
             if (!cm.getOption('fullScreen')) {
                 if (editor.options.sideBySideFullscreen === false) {
-                    cm.setOption('sideBySideNoFullscreen', true);
-                    noFullscreenItems.forEach(function(el) {
-                        addNoFullscreenClass(el);
-                    });
+                    // if side-by-side not-fullscreen ok, add classes when not fullscreen and showing side
+                    addClass(easyMDEContainer, 'sided--no-fullscreen');
                 } else {
                     toggleFullScreen(editor);
                 }
@@ -1991,19 +2037,16 @@ EasyMDE.prototype.render = function (el) {
       CodeMirror.defineMode('overlay-mode', function(config) {
         return CodeMirror.overlayMode(CodeMirror.getMode(config, options.spellChecker !== false ? 'spell-checker' : 'gfm'), options.overlayMode.mode, options.overlayMode.combine);
       });
-      
+
       mode = 'overlay-mode';
       backdrop = options.parsingConfig;
       backdrop.gitHubSpice = false;
-
-      if (options.spellChecker !== false) {
-        backdrop.name = 'gfm';
-
-        CodeMirrorSpellChecker({
-          codeMirrorInstance: CodeMirror,
-        });
-
-      } else if (options.spellChecker !== false) {
+    } else {
+        mode = options.parsingConfig;
+        mode.name = 'gfm';
+        mode.gitHubSpice = false;
+    }
+    if (options.spellChecker !== false) {
         mode = 'spell-checker';
         backdrop = options.parsingConfig;
         backdrop.name = 'gfm';
@@ -2012,11 +2055,6 @@ EasyMDE.prototype.render = function (el) {
         CodeMirrorSpellChecker({
             codeMirrorInstance: CodeMirror,
         });
-      }
-    } else {
-        mode = options.parsingConfig;
-        mode.name = 'gfm';
-        mode.gitHubSpice = false;
     }
 
     // eslint-disable-next-line no-unused-vars
@@ -2033,7 +2071,7 @@ EasyMDE.prototype.render = function (el) {
         tabSize: (options.tabSize != undefined) ? options.tabSize : 2,
         indentUnit: (options.tabSize != undefined) ? options.tabSize : 2,
         indentWithTabs: (options.indentWithTabs === false) ? false : true,
-        lineNumbers: false,
+        lineNumbers: (options.lineNumbers === true) ? true : false,
         autofocus: (options.autofocus === true) ? true : false,
         extraKeys: keyMaps,
         lineWrapping: (options.lineWrapping === false) ? false : true,
@@ -2044,6 +2082,7 @@ EasyMDE.prototype.render = function (el) {
         configureMouse: configureMouse,
         inputStyle: (options.inputStyle != undefined) ? options.inputStyle : isMobile() ? 'contenteditable' : 'textarea',
         spellcheck: (options.nativeSpellcheck != undefined) ? options.nativeSpellcheck : true,
+        autoRefresh: (options.autoRefresh != undefined) ? options.autoRefresh : false,
     });
 
     this.codemirror.getScrollerElement().style.minHeight = options.minHeight;
@@ -2085,55 +2124,67 @@ EasyMDE.prototype.render = function (el) {
         });
     }
 
+    function calcHeight(naturalWidth, naturalHeight) {
+        var height;
+        var viewportWidth = window.getComputedStyle(document.querySelector('.CodeMirror-sizer')).width.replace('px', '');
+        if (naturalWidth < viewportWidth) {
+            height = naturalHeight + 'px';
+        } else {
+            height = (naturalHeight / naturalWidth * 100) + '%';
+        }
+        return height;
+    }
+
+    var _vm = this;
+
+
+    function assignImageBlockAttributes(parentEl, img) {
+        parentEl.setAttribute('data-img-src', img.url);
+        parentEl.setAttribute('style', '--bg-image:url('+img.url+');--width:'+img.naturalWidth+'px;--height:'+calcHeight(img.naturalWidth, img.naturalHeight));
+        _vm.codemirror.setSize();
+    }
 
     function handleImages() {
-        if (options.previewImagesInEditor === false) {
+        if (!options.previewImagesInEditor) {
             return;
         }
-        function calcHeight(naturalWidth, naturalHeight) {
-            var height;
-            var viewportWidth = window.getComputedStyle(document.querySelector('.CodeMirror-sizer')).width.replace('px', '');
-            if (naturalWidth < viewportWidth) {
-                height = naturalHeight + 'px';
-            } else {
-                height = (naturalHeight / naturalWidth * 100) + '%';
-            }
-            return height;
-        }
-        easyMDEContainer.querySelectorAll('.cm-formatting-image').forEach(function(e) {
+
+        easyMDEContainer.querySelectorAll('.cm-image-marker').forEach(function(e) {
             var parentEl =  e.parentElement;
+            if (!parentEl.innerText.match(/^!\[.*?\]\(.*\)/g)) {
+                // if img pasted on the same line with other text, don't preview, preview only images on separate line
+                return;
+            }
             if (!parentEl.hasAttribute('data-img-src')) {
                 var srcAttr = parentEl.innerText.match('\\((.*)\\)'); // might require better parsing according to markdown spec
-                if (srcAttr && srcAttr.length >= 2) {
-                    var img = document.createElement('img');
-                    img.onload = function() {
-                        parentEl.setAttribute('data-img-src', srcAttr[1]);
-                        parentEl.setAttribute('data-img-width', img.naturalWidth);
-                        parentEl.setAttribute('data-img-height', img.naturalHeight);
-                        parentEl.setAttribute('style', '--bg-image:url('+srcAttr[1]+');--width:'+img.naturalWidth+'px;--height:'+calcHeight(img.naturalWidth, img.naturalHeight));
-                    };
-                    img.src = srcAttr[1];
+                if (!window.EMDEimagesCache) {
+                    window.EMDEimagesCache = {};
                 }
-            } else {
-                // handle resizes case
-                var src = parentEl.getAttribute('data-img-src');
-                var naturalWidth = +parentEl.getAttribute('data-img-width');
-                var naturalHeight = +parentEl.getAttribute('data-img-height');
-                parentEl.setAttribute('style', '--bg-image:url('+src+');--width:'+naturalWidth+'px;--height:'+calcHeight(naturalWidth, naturalHeight));
+
+                if (srcAttr && srcAttr.length >= 2) {
+                    var keySrc = srcAttr[1];
+
+                    if (! window.EMDEimagesCache[keySrc]) {
+                        var img = document.createElement('img');
+                        img.onload = function() {
+                            window.EMDEimagesCache[keySrc] = {
+                                naturalWidth: img.naturalWidth,
+                                naturalHeight: img.naturalHeight,
+                                url: keySrc,
+                            };
+                            assignImageBlockAttributes(parentEl, window.EMDEimagesCache[keySrc]);
+                        };
+                        img.src = keySrc;
+                    } else {
+                        assignImageBlockAttributes(parentEl, window.EMDEimagesCache[keySrc]);
+                    }
+                }
             }
         });
     }
     this.codemirror.on('update', function () {
         handleImages();
     });
-
-
-
-    this.onWindowResize = function() {
-        handleImages();
-    };
-
-    window.addEventListener('resize', this.onWindowResize, true);
 
     this.gui.sideBySide = this.createSideBySide();
     this._rendered = this.element;
@@ -2146,7 +2197,6 @@ EasyMDE.prototype.render = function (el) {
 };
 
 EasyMDE.prototype.cleanup = function () {
-    window.removeEventListener(this.onWindowResize);
     document.removeEventListener('keydown', this.documentOnKeyDown);
 };
 
@@ -2320,7 +2370,7 @@ EasyMDE.prototype.uploadImage = function (file, onSuccess, onError) {
             return;
         }
         if (this.status === 200 && response && !response.error && response.data && response.data.filePath) {
-            onSuccess(window.location.origin + '/' + response.data.filePath);
+            onSuccess((self.options.imagePathAbsolute ? '' : (window.location.origin + '/')) + response.data.filePath);
         } else {
             if (response.error && response.error in self.options.errorMessages) {  // preformatted error message
                 onErrorSup(fillErrorMessage(self.options.errorMessages[response.error]));

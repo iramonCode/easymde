@@ -141,6 +141,7 @@ declare namespace EasyMDE {
         title: string;
         noDisable?: boolean;
         noMobile?: boolean;
+        icon?: string;
     }
 
     interface ImageTextsOptions {
@@ -168,6 +169,7 @@ declare namespace EasyMDE {
         autoDownloadFontAwesome?: boolean;
         autofocus?: boolean;
         autosave?: AutoSaveOptions;
+        autoRefresh?: boolean | { delay: number };
         blockStyles?: BlockStyleOptions;
         element?: HTMLElement;
         forceSync?: boolean;
@@ -175,6 +177,7 @@ declare namespace EasyMDE {
         indentWithTabs?: boolean;
         initialValue?: string;
         insertTexts?: InsertTextOptions;
+        lineNumbers?: boolean;
         lineWrapping?: boolean;
         minHeight?: string;
         maxHeight?: string;
@@ -205,6 +208,7 @@ declare namespace EasyMDE {
         imageAccept?: string;
         imageUploadFunction?: (file: File, onSuccess: (url: string) => void, onError: (error: string) => void) => void;
         imageUploadEndpoint?: string;
+        imagePathAbsolute?: boolean;
         imageCSRFToken?: string;
         imageTexts?: ImageTextsOptions;
         errorMessages?: ImageErrorTextsOptions;
